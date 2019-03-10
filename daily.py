@@ -1,6 +1,8 @@
 import pyaudio
 import praw
 import pyowm
+import time
+
 
 def audio_int(num_samples=50):
     """ Gets average audio intensity of your mic sound. You can use it to get
@@ -50,34 +52,57 @@ def listen(x):
 
 
 def get_joke():
+    """
+    Gets the top joke of the month on reddit.com/r/jokes.
+    :return: returns list of tuples with title being at 0th index and joke being at 1st index.
+    """
     reddit = praw.Reddit('Digi', user_agent = 'Digi by Matthew and Geoff')
     # BTW, you need a praw.ini file for this. Otherwise this won't work. I'll send you the praw.ini file some time.
     # put it here:
     #In the directory specified by $HOME/.config if the HOME environment variable is defined (Linux and Mac OS systems).
     # For more information: https://praw.readthedocs.io/en/latest/getting_started/configuration/prawini.html#praw-ini
 
-    for submission in reddit.subreddit('jokes').top(time_filter='month', limit=1):
+
+    list_of_jokes = []
+    for submission in reddit.subreddit('jokes').top(time_filter='month', limit=100):
         print(f'Here is a joke. It is called "{submission.title}".')
         print(submission.selftext)
+        joke_i = (submission.title, submission.selftext)
+        list_of_jokes.append(joke_i)
+    return list_of_jokes
 
 
 def get_weather():
+    """
+    Gets the current weather of ATX.
+    :return:
+    """
     owm = pyowm.OWM('a07c45f49457239d1504a9fe6fa19b3d')
-    reg = owm.city_id_registry()
-    reg.ids_for('Austin')
-
-
-    observation = owm.weather_at_place('')
+    observation = owm.weather_at_id(4671654) #THIS IS AUSTIN, TX'S ID
     w = observation.get_weather()
-    print(w)
-    w.get_wind()
     w.get_humidity()
     w.get_temperature('fahrenheit')
+    print(f"wind: {w.get_wind()} humidity: {w.get_humidity}. temp: {w.get_temperature('fahrenheit')}")
+    for k, v in w.get_temperature('fahrenheit').items():
+        print(k, v)
+    return w.get_temperature('fahrenheit')
+
+
+def get_time():
+    """
+    Gets the current time using time module.
+    :return: String which says the current time.
+    """
+    local_time = time.ctime(time.time())
+    return local_time.split(' ')[3]
+
+
+
 
 
 def main():
     #get_joke()
     get_weather()
-
+    get_time()
 if __name__ == "__main__":
     main()
