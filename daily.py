@@ -1,71 +1,25 @@
-import pyaudio
 import praw
 import pyowm
-import time
+import datetime
 import speech_recognition as sr
+from gtts import gTTS
 import os
-
-
-# def audio_int(num_samples=50):
-#     """ Gets average audio intensity of your mic sound. You can use it to get
-#             average intensities while you're talking and/or silent. The average
-#             is the avg of the 20% largest intensities recorded.
-#         """
-#     p = pyaudio.PyAudio()
-#
-#     stream = p.open(format=FORMAT,
-#                     channels=CHANNELS,
-#                     rate=RATE,
-#                     input=True,
-#                     frames_per_buffer=CHUNK)
-#
-#     values = [math.sqrt(abs(audioop.avg(stream.read(CHUNK), 4)))
-#               for x in range(num_samples)]
-#
-#     values = sorted(values, reverse=True)
-#     r = sum(values[:int(num_samples * 0.2)]) / int(num_samples * 0.2)
-#
-#     print("Average audio intensity is: ", r)
-#     stream.close()
-#     p.terminate()
-#
-#     if r > THRESHOLD:
-#         listen(0)
-#
-#     threading.Timer(SILENCE_LIMIT, audio_int).start()
+import random
 
 
 # obtain audio from the microphone
 def get_audio():
     r = sr.Recognizer()
     with sr.Microphone() as source:
-        print("Say something!")
+        play_audio("How can I help you?", "en")
         audio = r.listen(source)
 
         try:
-            print("Google thinks you said:\n" + r.recognize_google(audio))
             return r.recognize_google(audio)
 
         except:
             pass
 
-
-# def listen(x):
-#     r = sr.Recognizer()
-#     if x == 0:
-#         system('say Hi. How can I help?')
-#     with sr.Microphone() as source:
-#         audio=r.listen(source)
-#     try:
-#         text = r.recognize_google(audio)
-#         y = process(text.lower())
-#         return y
-#     except:
-#         if x == 1:
-#             system('say Good Bye!')
-#         else:
-#             system('say I did not get that. Please say again.')
-#             listen(1)
 
 def get_joke(num_jokes):
     """
@@ -82,7 +36,9 @@ def get_joke(num_jokes):
     for submission in reddit.subreddit('jokes').top(time_filter='month', limit=(num_jokes+1)):
         joke_i = (submission.title, submission.selftext)
         list_of_jokes.append(joke_i)
-    result = f'Here is a joke. It is called {list_of_jokes[num_jokes][0]}. Here is how it goes. {list_of_jokes[num_jokes][1]}'
+
+    list_of_jokes[num_jokes][1].replace('\n', '')
+    result = f'Here is a joke. Here is how it goes. {list_of_jokes[num_jokes][0]} {list_of_jokes[num_jokes][1]}'
     return result
 
 
@@ -106,7 +62,7 @@ def get_weather():
             temp_max = v
         elif k == 'temp_min':
             temp_min = v
-    result = f'The temperature right now is: {temp} Fahrenheit. It is projected to be between {temp_min} and {temp_max}. '
+    result = f'The temperature right now is: {int(temp)} degrees Fahrenheit. It is projected to be between {int(temp_min)} degrees and {int(temp_max)} degrees. '
     return result
 
 
@@ -115,28 +71,50 @@ def get_time():
     Gets the current time using time module.
     :return: A string, ready to be read out, that gives information about the time.
     """
-    local_time = time.ctime(time.time())
-    local_time = local_time.split(' ')
-    result = f'The time right now is {local_time[3]}.'
+    currentDT = datetime.datetime.now()
+    date = currentDT.strftime("%a, %b %d, %Y")
+    time = currentDT.strftime("%I %M %p")
+    result = f'It is {time} on {date}.'
     return result
 
-def main():
-    num_jokes = 0
-    while True:
 
+def play_audio(string, language):
+    """
+    saves the string as an mp3 audio file using google text to speech and then uses command line to play the file.
+    :param string: string to be read
+    :param language: language to be output
+    :return: speech
+    """
+    str = string
+    myobj = gTTS(text=str, lang=language, slow=False)
+    myobj.save("welcome.mp3")
+    try:
+        os.system("mpg321 welcome.mp3")
+    except:
+        os.system("welcome.mp3")
+
+
+def main():
+    language = 'en'
+    num_jokes = random.randint(0,100)
+    while True:
         command = get_audio()
         if "joke" in command:
-            os.system("say " + get_joke(num_jokes))
-            print(get_joke(num_jokes))
-            num_jokes = num_jokes + 1
+            str =  get_joke(num_jokes)
+            play_audio(str, language)
+            if num_jokes < 100:
+                num_jokes = num_jokes + 1
+            else:
+                num_jokes = 0
 
         if "weather" in command:
-            os.system("say " + get_weather())
+            play_audio(get_weather(), language)
 
         if "time" in command:
-            os.system("say " + get_time())
+            play_audio(get_time(), language)
 
         if command == "goodbye":
+            play_audio('goodbye', language)
             break
 
 
