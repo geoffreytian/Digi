@@ -119,6 +119,10 @@ def main():
             play_audio('goodbye', language)
             break
 
+        if command == "":
+            play_audio('goodbye', language)
+            break
+
 
 if __name__ == "__main__":
     main()
