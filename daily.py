@@ -19,7 +19,7 @@ def get_audio():
             return r.recognize_google(audio)
 
         except:
-            pass
+            return ""
 
 
 def get_joke(num_jokes):
