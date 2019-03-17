@@ -109,17 +109,17 @@ def main():
             else:
                 num_jokes = 0
 
-        if "weather" in command:
+        elif "weather" in command:
             play_audio(get_weather(), language)
 
-        if "time" in command:
+        elif "time" in command:
             play_audio(get_time(), language)
 
-        if command == "goodbye":
+        elif command == "goodbye":
             play_audio('goodbye', language)
             break
 
-        if command == "":
+        elif command == "":
             play_audio('goodbye', language)
             break
 
