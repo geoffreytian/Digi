@@ -5,6 +5,7 @@ import speech_recognition as sr
 from gtts import gTTS
 import os
 import random
+import sys
 
 
 # obtain audio from the microphone
@@ -88,11 +89,12 @@ def play_audio(string, language):
     str = string
     myobj = gTTS(text=str, lang=language, slow=False)
     myobj.save("welcome.mp3")
-    try:
-        os.system("mpg321 welcome.mp3")
-    except:
-        os.system("welcome.mp3")
 
+    if sys.platform.startswith('darwin'):
+        os.system("mpg321 welcome.mp3")
+
+    elif sys.platform.startswith('win32'):
+        os.system("welcome.mp3")
 
 def main():
     language = 'en'
