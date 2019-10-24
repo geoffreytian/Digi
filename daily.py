@@ -11,9 +11,15 @@ from geolocation.main import GoogleMaps
 from geolocation.distance_matrix.client import DistanceMatrixApiClient
 import geocoder
 
+n = 49
 
 # obtain audio from the microphone
 def get_audio():
+    """
+    Listens for audio commands and uses Google Speech API to produce a transcript of audio
+    :precondition: Must be connected to Internet.
+    :return: A string that gives information about the user input.
+    """
     r = sr.Recognizer()
     with sr.Microphone() as source:
         play_audio("How can I help you?", "en")
@@ -26,34 +32,44 @@ def get_audio():
 
 def get_joke(num_jokes):
     """
-    Gets jokes from reddit.
+    Gets joke from top n jokes from reddit.
+    :precondition: Need a praw.ini file in the directory specified by $HOME/.config 
+                   If the HOME environment is defined (Linux and Mac OS systems).
+                   For more information: https://praw.readthedocs.io/en/latest/getting_started/configuration/prawini.html#praw-ini
     :param num_jokes: This is how many times the user has asked for a joke.
     :return: A string, ready to be read out, that tells a joke.
     """
     reddit = praw.Reddit(client_id = config.reddit_client_id, client_secret = config.reddit_secret, user_agent = config.reddit_agent)
-    # Need a praw.ini file for this.
-    # Put it in the directory specified by $HOME/.config if the HOME environment variable is defined (Linux and Mac OS systems).
-    # For more information: https://praw.readthedocs.io/en/latest/getting_started/configuration/prawini.html#praw-ini
     list_of_jokes = []
-    for submission in reddit.subreddit('jokes').top(time_filter='month', limit=(num_jokes+1)):
-        joke_i = (submission.title, submission.selftext)
-        if len(joke_i) < 3:
-            list_of_jokes.append(joke_i)
 
-    list_of_jokes[num_jokes][1].replace('\n', '')
-    result = f'Here is a joke. Here is how it goes. {list_of_jokes[num_jokes][0]} {list_of_jokes[num_jokes][1]}'
+    # get the top num_jokes jokes and return the last one, sort of randomization of the top n jokes 
+    for submission in reddit.subreddit('jokes').top(time_filter='month'):
+        joke_i = (submission.title, submission.selftext)
+        if len(joke_i[1]) < 100:
+            list_of_jokes.append(joke_i)
+        if len(list_of_jokes) > num_jokes:
+            break
+    
+    # replace any new lines with a period in the punchline for dramatic effect
+    list_of_jokes[num_jokes][1].replace('\n', '. ')
+    result = f'Here is a joke. Here is how it goes. {list_of_jokes[num_jokes][0]}. {list_of_jokes[num_jokes][1]}'
     return result
 
 
 def get_location():
+    """
+    Gets current location based on IP address using geocoder API
+    :precondition: must be in US city.
+    :return: A string that returns US city.
+    """
+    # get location by IP address
     myloc = geocoder.ip('me')
-    google_maps = GoogleMaps(api_key=config.geo_key)
     return myloc.city
 
 
 def get_weather():
     """
-    Gets the current weather of ATX.
+    Gets the current weather of current US city.
     :return: A string, ready to be read out, that gives information about the weather.
     """
     owm = pyowm.OWM(config.omw_secret)
@@ -78,7 +94,7 @@ def get_weather():
 
 def get_time():
     """
-    Gets the current time using time module.
+    Gets the current time using datetime package.
     :return: A string, ready to be read out, that gives information about the time.
     """
     currentDT = datetime.datetime.now()
@@ -90,10 +106,10 @@ def get_time():
 
 def play_audio(string, language):
     """
-    saves the string as an mp3 audio file using google text to speech and then uses command line to play the file.
+    saves the string as an mp3 audio file using google text to speech and then uses os shell commands to playback the file.
     :param string: string to be read
     :param language: language to be output
-    :return: speech
+    :return: audio playback
     """
     str = string
     myobj = gTTS(text=str, lang=language, slow=False)
@@ -107,7 +123,7 @@ def play_audio(string, language):
 
 def main():
     language = 'en'
-    num_jokes = random.randint(0,100)
+    num_jokes = random.randint(0, n)
     while True:
         command = get_audio()
 
